@@ -26,7 +26,7 @@ Splyce is configured entirely through environment variables. Create a `.env` fil
 | `ELEVENLABS_API_KEY` | — | ElevenLabs API key. Required for TTS and voice cloning. Omit if using `ALLOW_SILENT_VOICEOVER=1`. |
 | `ELEVENLABS_VOICE_ID` | `21m00Tcm4TlvDq8ikWAM` | Default ElevenLabs voice ID used when voice cloning is unavailable or fails. |
 | `VOICE_REFERENCE_PATH` | `wolf_voice.mp4` (project root) | Path to the audio or video file used as the voice cloning reference. See [Voice cloning](/guides/voice-cloning). |
-| `ALLOW_SILENT_VOICEOVER` | — | Set to `1` to insert a silent audio track instead of generating voiceover. Useful for testing without an ElevenLabs key. |
+| `ALLOW_SILENT_VOICEOVER` | — | Set to `1`, `true`, or `yes` to insert a silent audio track instead of generating voiceover. Useful for testing without an ElevenLabs key. |
 
 ## Video processing
 

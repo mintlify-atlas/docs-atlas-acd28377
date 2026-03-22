@@ -97,7 +97,7 @@ Use `/api/personalize-prompt` to audit prompts before committing to a brand voic
 
 ## Gemini configuration
 
-Identification requests are sent to `gemini-2.0-flash` (overridable via `TEXT_MODEL` in your environment). The request uses:
+Identification requests are sent to `gemini-2.0-flash` (overridable via `GEMINI_TEXT_MODEL` in your environment). The request uses:
 
 - `response_mime_type: "application/json"` — enforces structured output
 - `temperature: 0.4` — low enough for consistency, high enough to vary across different viewer profiles

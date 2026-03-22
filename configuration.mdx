@@ -25,18 +25,6 @@ All configuration is read from environment variables at startup. The recommended
   Comma-separated list of Gemini image models to try for frame editing, in priority order. The server attempts each model in turn and uses the first successful response.
 </ParamField>
 
-<ParamField path="GEMINI_VEO_MODEL" type="string" default="veo-3.1-generate-preview">
-  Veo model used for AI video generation. Only relevant if using the Veo-based generation path.
-</ParamField>
-
-<ParamField path="GEMINI_VEO_POLL_INTERVAL_S" type="number" default="10">
-  How often (in seconds) to poll the Veo API for a completed generation job.
-</ParamField>
-
-<ParamField path="GEMINI_VEO_MAX_WAIT_S" type="number" default="600">
-  Maximum time (in seconds) to wait for a Veo generation job before timing out.
-</ParamField>
-
 ## Voice and audio
 
 <ParamField path="ELEVENLABS_API_KEY" type="string">
@@ -52,7 +40,7 @@ All configuration is read from environment variables at startup. The recommended
 </ParamField>
 
 <ParamField path="ALLOW_SILENT_VOICEOVER" type="string">
-  Set to `1` to skip voiceover generation entirely and produce a silent ad segment. Useful for development or when no ElevenLabs key is available.
+  Set to `1`, `true`, or `yes` to skip voiceover generation entirely and produce a silent ad segment. Useful for development or when no ElevenLabs key is available.
 </ParamField>
 
 ## Video processing

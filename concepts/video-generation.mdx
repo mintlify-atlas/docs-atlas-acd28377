@@ -56,9 +56,9 @@ The accuracy of product placement depends heavily on the body part being clearly
 
 ## Step 3: Voiceover generation
 
-`generate_voiceover()` calls ElevenLabs TTS to synthesize the voiceover line from `ad_description.text_or_voiceover`.
+`generate_voiceover()` calls ElevenLabs TTS to synthesize a fixed voiceover line constructed from the product name:
 
-**Default voiceover line:** `"Oh wow, a {product_name}."`
+**Voiceover line:** `"Oh wow, a {product_name}."` — the `product_name` value is substituted at generation time.
 
 If `use_cloned_voice` is enabled (default), ElevenLabs uses Instant Voice Clone with a reference audio file. The default reference is `wolf_voice.mp4`, configurable via the `VOICE_REFERENCE_PATH` environment variable. The cloned voice matches the character's speaking style, making the voiceover blend with the surrounding dialogue.
 
