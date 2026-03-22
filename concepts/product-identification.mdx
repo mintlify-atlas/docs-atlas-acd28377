@@ -1,0 +1,103 @@
+---
+title: "Product identification"
+description: "How Splyce maps viewer profile data to a specific retail SKU using a meta-prompt and Google Gemini."
+---
+
+Product identification is the first step in the Splyce pipeline. It answers the question: *given this viewer and this brand, which exact product should be advertised?*
+
+Rather than relying on a predefined product catalog or rule-based matching, Splyce builds a natural language prompt that combines brand context with viewer signals and instructs Gemini to reason its way to the best-fit SKU.
+
+## The meta-prompt approach
+
+Splyce constructs a single meta-prompt in `build_product_identification_prompt()` that contains two things:
+
+1. **Brand context** — the brand name, optional brand voice notes, and the instruction to pick a real, purchasable product (not a marketing family name).
+2. **Viewer context** — a structured viewer data object or free-text description that Gemini interprets to infer purchase intent and lifestyle fit.
+
+Gemini is instructed to return only a JSON object with a single field:
+
+```json
+{ "product_name": "Patek Philippe Aquanaut 5167A-001" }
+```
+
+This strict output format — enforced with `response_mime_type: "application/json"` and `temperature: 0.4` — prevents Gemini from returning prose, sub-brand names, or product families. The value must be specific enough to identify a single purchasable configuration.
+
+## Viewer data signals
+
+The prompt is designed to interpret the following viewer signals:
+
+| Signal | Example value | What it informs |
+|---|---|---|
+| `household_income` | `"$150k+"` | Price tier and product line |
+| `interests` | `["watches", "luxury", "travel"]` | Category and style preference |
+| `region` | `"US-Northeast"` | Regional availability, trim levels |
+| `commute` | `"urban"` | Use-case fit (e.g. compact vs. SUV) |
+| `household_size` | `3` | Vehicle size, family-oriented products |
+| `lifestyle` | `"active outdoor"` | Durability, sport variants |
+
+Viewer data can be passed as a structured object or a plain string. The prompt handles both.
+
+**Example viewer data object:**
+
+```json
+{
+  "household_income": "$150k+",
+  "interests": ["watches", "luxury", "travel"],
+  "region": "US-Northeast",
+  "commute": "urban"
+}
+```
+
+**Expected output for brand `"Patek Philippe"`:**
+
+```json
+{ "product_name": "Patek Philippe Aquanaut 5167A-001" }
+```
+
+Gemini infers that a high-income, urban, luxury-interested viewer in the Northeast is most likely to respond to the Aquanaut line's stainless sport-luxury positioning, and picks a specific reference number rather than just "Patek Philippe Aquanaut".
+
+## Prompt modes
+
+The `build_product_identification_prompt()` function accepts a `mode` parameter that controls prompt verbosity.
+
+| Mode | Description |
+|---|---|
+| `"full"` | Default. Includes detailed instructions, supports `output_language` and `brand_voice_notes`. Use for production personalization. |
+| `"minimal"` | Shorter prompt with fewer instructions. Faster and cheaper, but less reliable SKU specificity. Use for testing or latency-sensitive contexts. |
+
+<Tip>
+Use `"full"` mode in production. The additional instructions significantly improve the likelihood that Gemini returns a real, purchasable product reference rather than a generic family name.
+</Tip>
+
+### Brand voice notes
+
+In `"full"` mode, you can pass a `brand_voice_notes` string to influence the selection. For example:
+
+```
+"Focus on sustainability-oriented models. Avoid entry-level trim lines."
+```
+
+This is appended to the prompt and interpreted by Gemini as a soft constraint on which SKU to recommend.
+
+### Output language
+
+Also in `"full"` mode, `output_language` instructs Gemini to return the `product_name` in a specific language or locale format. If omitted, Gemini defaults to English.
+
+## API endpoints
+
+Two endpoints expose product identification:
+
+**`POST /api/personalize-prompt`** — builds and returns the meta-prompt text without calling Gemini. Use this to inspect or debug the prompt that will be sent.
+
+**`POST /api/identify-product`** — builds the prompt and calls Gemini. Returns the `product_name` string directly.
+
+<Note>
+Use `/api/personalize-prompt` to audit prompts before committing to a brand voice configuration. The returned prompt text is exactly what gets sent to Gemini in `/api/identify-product`.
+</Note>
+
+## Gemini configuration
+
+Identification requests are sent to `gemini-2.0-flash` (overridable via `TEXT_MODEL` in your environment). The request uses:
+
+- `response_mime_type: "application/json"` — enforces structured output
+- `temperature: 0.4` — low enough for consistency, high enough to vary across different viewer profiles

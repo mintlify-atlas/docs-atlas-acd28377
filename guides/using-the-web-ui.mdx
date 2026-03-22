@@ -1,0 +1,118 @@
+---
+title: "Using the web UI"
+description: "Walk through the three-step browser interface to identify a product, analyze a video clip, and generate a personalized ad — no code required."
+---
+
+Splyce ships with a browser-based UI served at [http://127.0.0.1:8000](http://127.0.0.1:8000) when the server is running. It mirrors the three-step API pipeline and lets you test the full flow without writing any code.
+
+<Note>
+  You must have the server running before opening the UI. See [Running the server](/guides/running-the-server) if you haven't set it up yet.
+</Note>
+
+## Step 1 — Product identification
+
+This step calls `/api/identify-product` and returns a specific, purchasable product SKU matched to the viewer's profile.
+
+<Steps>
+  <Step title="Enter a brand name">
+    Type a brand name into the **Brand** field — for example, `Toyota`, `Samsung`, or `Sony`. This tells Gemini which product catalog to draw from.
+  </Step>
+
+  <Step title="Enter viewer / user data">
+    Paste viewer context into the **User / viewer data** textarea. This can be JSON or plain text and should describe the viewer's income, lifestyle, location, or interests — anything that helps Gemini pick the most relevant product.
+
+    Example:
+
+    ```json
+    {
+      "age": 34,
+      "region": "Pacific Northwest",
+      "income": "upper-middle",
+      "interests": ["outdoor hiking", "photography"]
+    }
+    ```
+  </Step>
+
+  <Step title="Choose a mode">
+    Select **Full** or **Minimal** from the mode selector.
+
+    - **Full** — generates a detailed prompt with richer product-matching instructions
+    - **Minimal** — generates a shorter prompt, faster but less nuanced
+  </Step>
+
+  <Step title="Set language and brand voice (optional)">
+    - **Language** — sets the language for the identified product description (defaults to English)
+    - **Brand voice notes** — free-text guidance passed to Gemini, such as `"premium feel, sustainability focus"`
+  </Step>
+
+  <Step title="Generate the prompt or run identification">
+    You have two options:
+
+    - **Generate prompt** — builds the meta-prompt locally and shows it in the output area. No Gemini call is made. Useful for inspecting or exporting the prompt.
+    - **Identify with Gemini** — sends the prompt to Gemini and returns the identified product. Requires `GEMINI_API_KEY` in your `.env`.
+
+    The identified product appears in the **Identified product** textarea below the buttons — for example, `2025 Toyota RAV4 XLE Hybrid AWD`.
+  </Step>
+</Steps>
+
+## Step 2 — Video clip analysis
+
+This step uploads a video and calls `/api/analyze-video` to find the optimal ad placement timestamp.
+
+<Steps>
+  <Step title="Set the product to advertise">
+    The **Product to advertise** field should contain the product identified in step 1. Click **Use from step 1** to auto-fill it, or type a product name manually.
+  </Step>
+
+  <Step title="Upload a video clip">
+    Click **Choose file** and select an MP4 file. Other formats supported by ffmpeg also work, but MP4 is recommended for broadest compatibility.
+
+    The maximum upload size is controlled by `MAX_VIDEO_UPLOAD_MB` (default: 200 MB).
+  </Step>
+
+  <Step title="Analyze the clip">
+    Click **Analyze clip with Gemini**. Gemini receives the full video file and the product name, then returns:
+
+    - A scene-by-scene breakdown
+    - The optimal ad placement timestamp
+    - A visual edit description (where and how to place the product on the character)
+    - A `video_id` used to reference the uploaded clip in the next step
+
+    Analysis can take several minutes for large files. The results appear in the **Placement analysis** textarea.
+  </Step>
+</Steps>
+
+<Note>
+  The `video_id` returned by the analysis expires after 30 minutes (`VIDEO_CACHE_MAX_AGE_S`). If you wait longer than that before generating the merged video, you must re-upload the clip and run the analysis again.
+</Note>
+
+## Step 3 — Merged video generation
+
+This step calls `/api/generate-ad-video` and splices the personalized ad segment into the original clip.
+
+<Steps>
+  <Step title="Check voiceover requirements">
+    Voiceover generation requires either:
+
+    - `ELEVENLABS_API_KEY` set in your `.env`, **or**
+    - `ALLOW_SILENT_VOICEOVER=1` in your `.env` to skip voiceover and insert a silent audio track instead
+
+    Without one of these, the request will fail at the voiceover stage.
+  </Step>
+
+  <Step title="Generate the merged video">
+    Click **Generate merged video**. Splyce will:
+
+    1. Extract the frame at the selected timestamp
+    2. Use a Gemini image model to place the product on the character in that frame
+    3. Generate a voiceover line via ElevenLabs
+    4. Assemble the 3-second ad segment with ffmpeg
+    5. Splice the segment into the original video
+
+    Processing can take a minute or more depending on video length and model response times.
+  </Step>
+
+  <Step title="Watch the result">
+    The merged video appears in the video player on the page once processing is complete. You can download it using the browser's native video controls.
+  </Step>
+</Steps>

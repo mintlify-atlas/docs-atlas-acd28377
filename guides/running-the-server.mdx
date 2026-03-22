@@ -1,0 +1,123 @@
+---
+title: "Running the server"
+description: "Install dependencies, configure environment variables, and start the Splyce FastAPI server."
+---
+
+<Warning>
+  ffmpeg must be installed and available on your `PATH`. Splyce uses ffmpeg for all video assembly and splicing operations. Video generation will fail without it.
+</Warning>
+
+## Prerequisites
+
+Before you start, make sure you have the following installed:
+
+- **Python 3.10+** — check with `python --version` or `python3 --version`
+- **pip** — comes with Python; check with `pip --version`
+- **ffmpeg** — install via your system package manager (see below)
+- **git** — to clone the repository
+
+<Tabs>
+  <Tab title="macOS">
+    ```bash
+    brew install ffmpeg
+    ```
+  </Tab>
+  <Tab title="Ubuntu / Debian">
+    ```bash
+    sudo apt update && sudo apt install ffmpeg
+    ```
+  </Tab>
+  <Tab title="Windows">
+    Download a build from [ffmpeg.org/download.html](https://ffmpeg.org/download.html) and add the `bin/` folder to your `PATH`.
+  </Tab>
+</Tabs>
+
+Verify ffmpeg is on your PATH:
+
+```bash
+ffmpeg -version
+```
+
+## Installation
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/your-org/splyce.git
+    cd splyce
+    ```
+  </Step>
+
+  <Step title="Create a virtual environment">
+    ```bash
+    python -m venv .venv
+    source .venv/bin/activate   # Windows: .venv\Scripts\activate
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    ```bash
+    pip install -r requirements.txt
+    ```
+  </Step>
+
+  <Step title="Create your .env file">
+    Create a `.env` file at the project root with at minimum your Gemini API key:
+
+    ```env
+    GEMINI_API_KEY=your_key_here
+
+    # Optional: required for voiceover generation
+    ELEVENLABS_API_KEY=your_key_here
+    ```
+
+    Get a Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey).
+
+    For a full list of supported variables, see [Environment variables](/guides/environment-variables).
+  </Step>
+
+  <Step title="Start the server">
+    Run the server using the provided `run.py` launcher:
+
+    ```bash
+    python run.py
+    ```
+
+    This starts Uvicorn with `--reload` enabled on `127.0.0.1:8000`. The process reads the `PORT` environment variable if you need a different port.
+
+    Alternatively, invoke Uvicorn directly:
+
+    ```bash
+    uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+    ```
+  </Step>
+
+  <Step title="Verify the server is running">
+    Send a request to the health endpoint:
+
+    ```bash
+    curl http://127.0.0.1:8000/api/health
+    ```
+
+    Expected response:
+
+    ```json
+    {
+      "status": "ok",
+      "service": "splyce-ad-personalization",
+      "prompt_api": "product-prompt-v2-no-standard-ad",
+      "gemini_configured": true,
+      "elevenlabs_configured": false
+    }
+    ```
+
+    `gemini_configured` is `true` when `GEMINI_API_KEY` is set. `elevenlabs_configured` is `true` when `ELEVENLABS_API_KEY` is set.
+  </Step>
+</Steps>
+
+## Production considerations
+
+- **Disable reload** — `reload=True` watches the filesystem for code changes. Remove it in production (`--no-reload` with Uvicorn, or edit `run.py` to pass `reload=False`).
+- **Set a stable PORT** — export `PORT` in your environment or process manager config so the port is predictable across restarts.
+- **Use a reverse proxy** — run Splyce behind nginx or a cloud load balancer to handle TLS termination, request buffering, and rate limiting.
+- **Increase upload limits** — the default `MAX_VIDEO_UPLOAD_MB` is 200. Adjust this to match your infrastructure limits and reverse proxy body-size settings.

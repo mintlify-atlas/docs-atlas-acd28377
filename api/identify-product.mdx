@@ -1,0 +1,78 @@
+---
+title: 'Identify product'
+description: 'Build a meta-prompt and send it to Gemini to identify the best-fitting product for a viewer profile.'
+---
+
+## POST /api/identify-product
+
+Builds the meta-prompt for a brand and viewer profile, sends it to Google Gemini, and returns the specific product SKU Gemini selected along with the prompt that was used.
+
+<Note>
+  `/api/ai/identify-product` is an alias for this endpoint. Both paths accept identical request bodies and return identical responses.
+</Note>
+
+### Request body
+
+<ParamField body="brand_name" type="string" required>
+  The brand to advertise. Gemini infers the best-fitting specific product from the viewer context.
+</ParamField>
+
+<ParamField body="user_data" type="object | string">
+  Viewer context. Accepts a JSON object or a freeform string describing the viewer (demographics, interests, region, etc.).
+</ParamField>
+
+<ParamField body="mode" type="string" default="full">
+  Prompt size. Must be `"full"` or `"minimal"`. `"full"` produces a detailed prompt; `"minimal"` produces a shorter one.
+</ParamField>
+
+<ParamField body="output_language" type="string">
+  Optional language for the output, e.g. `"English"` or `"Spanish"`.
+</ParamField>
+
+<ParamField body="brand_voice_notes" type="string">
+  Optional tone guidance, legal constraints, or words to avoid. Applied when Gemini selects the product.
+</ParamField>
+
+### Response
+
+<ResponseField name="product_name" type="string" required>
+  The specific product SKU Gemini selected for this viewer profile, e.g. `"2025 Toyota RAV4 XLE Hybrid AWD"`.
+</ResponseField>
+
+<ResponseField name="prompt" type="string" required>
+  The meta-prompt that was sent to Gemini.
+</ResponseField>
+
+### Example
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/identify-product \
+  -H "Content-Type: application/json" \
+  -d '{
+    "brand_name": "Toyota",
+    "user_data": {
+      "household_income": "$75k-$100k",
+      "interests": ["road trips", "outdoors"],
+      "region": "US-West",
+      "family_size": 2
+    }
+  }'
+```
+
+**Response**
+
+```json
+{
+  "product_name": "2025 Toyota RAV4 XLE Hybrid AWD",
+  "prompt": "You are a retail product specialist for Toyota..."
+}
+```
+
+### Errors
+
+| Status | Cause |
+|--------|-------|
+| `400`  | `brand_name` is missing or empty. |
+| `400`  | `mode` is not `"full"` or `"minimal"`. |
+| `503`  | `GEMINI_API_KEY` is not configured. |
+| `502`  | Gemini request failed. |

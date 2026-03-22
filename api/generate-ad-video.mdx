@@ -1,0 +1,76 @@
+---
+title: 'Generate ad video'
+description: 'Build a personalized ad segment and splice it into the cached video clip.'
+---
+
+## POST /api/generate-ad-video
+
+Takes the `video_id` and analysis output from [POST /api/analyze-video](/api/analyze-video), generates a static ad frame using Gemini and a voiceover using ElevenLabs, then splices the result into the cached clip with ffmpeg.
+
+<Warning>
+  `ELEVENLABS_API_KEY` must be configured unless the environment variable `ALLOW_SILENT_VOICEOVER=1` is set. Without a valid ElevenLabs key and that override unset, this endpoint will fail.
+</Warning>
+
+<Note>
+  `ffmpeg` must be installed and available on `PATH`. The server will return `500` if ffmpeg is missing or exits with an error.
+</Note>
+
+### Request
+
+Send the request as `multipart/form-data`.
+
+<ParamField body="video_id" type="string" required>
+  The UUID returned by `/api/analyze-video`. Must refer to a video still in the server cache (within 30 minutes of the analyze call).
+</ParamField>
+
+<ParamField body="analysis" type="string" required>
+  The full response object from `/api/analyze-video`, serialized as a JSON string.
+</ParamField>
+
+<ParamField body="product_name" type="string" required>
+  The product to display in the ad segment.
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string" required>
+  Always `"success"` on a successful response.
+</ResponseField>
+
+<ResponseField name="video_url" type="string" required>
+  Server-relative path to the merged output video, e.g. `"/api/output/abc123_edited.mp4"`. Serve this path with [GET /api/output/{filename}](/api/serve-output).
+</ResponseField>
+
+<ResponseField name="voiceover_line" type="string" required>
+  The voiceover line that was generated and included in the ad segment, e.g. `"Oh wow, a 2025 Toyota RAV4 XLE Hybrid AWD."`
+</ResponseField>
+
+### Example
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/generate-ad-video \
+  -F "video_id=550e8400-e29b-41d4-a716-446655440000" \
+  -F 'analysis={"scene_breakdown":"...","ad_placement":{...},"product":"...","video_id":"..."}' \
+  -F "product_name=2025 Toyota RAV4 XLE Hybrid AWD"
+```
+
+**Response**
+
+```json
+{
+  "status": "success",
+  "video_url": "/api/output/550e8400_edited.mp4",
+  "voiceover_line": "Oh wow, a 2025 Toyota RAV4 XLE Hybrid AWD."
+}
+```
+
+### Errors
+
+| Status | Cause |
+|--------|-------|
+| `400`  | Any required field (`video_id`, `analysis`, `product_name`) is missing. |
+| `400`  | `analysis` is not valid JSON. |
+| `400`  | Ad timestamp from analysis falls too close to the end of the video. |
+| `404`  | `video_id` not found — cache expired or invalid UUID. |
+| `500`  | ffmpeg processing failed. |
+| `503`  | `GEMINI_API_KEY` is not configured. |

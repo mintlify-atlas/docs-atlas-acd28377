@@ -1,0 +1,60 @@
+---
+title: "Introduction"
+description: "AI-powered video ad personalization — identify the right product, find the perfect placement, and splice a seamless ad into any video clip."
+---
+
+## What is Splyce?
+
+Splyce is a three-step AI pipeline that turns a brand name and viewer data into a personalized video advertisement, seamlessly spliced into an existing video clip — without ever looking like an ad.
+
+The pipeline uses **Google Gemini** to match viewers to specific product SKUs, analyze video scenes for optimal ad moments, and edit individual frames to place products physically on characters. **ElevenLabs** generates voiceover in the character's cloned voice. **ffmpeg** handles the final video assembly.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get the server running and make your first API call in minutes
+  </Card>
+  <Card title="Pipeline Overview" icon="diagram-project" href="/concepts/pipeline-overview">
+    Understand the three-step personalization pipeline
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/health">
+    Full endpoint documentation with request/response schemas
+  </Card>
+  <Card title="Configuration" icon="gear" href="/configuration">
+    Environment variables, model overrides, and tuning options
+  </Card>
+</CardGroup>
+
+## How it works
+
+<Steps>
+  <Step title="Identify the product">
+    Send a brand name and viewer profile data to `/api/identify-product`. Gemini reads the viewer context and returns a single, specific retail SKU — not a marketing family, but a purchasable product configuration like *"2025 Toyota RAV4 XLE Hybrid AWD"*.
+  </Step>
+  <Step title="Analyze the video">
+    Upload a video clip to `/api/analyze-video` with the identified product name. Gemini produces a full scene breakdown and selects the optimal timestamp for a 3-second ad placement, plus a visual edit description specifying exactly where the product should appear on the character.
+  </Step>
+  <Step title="Generate the merged video">
+    Call `/api/generate-ad-video` with the video ID and analysis JSON. Splyce edits a frame with the product physically placed on the character, generates a voiceover line in the character's cloned voice, and splices the segment into the original clip using ffmpeg.
+  </Step>
+</Steps>
+
+## Key capabilities
+
+- **Viewer-to-SKU matching** — Gemini infers the best-fitting specific product from income, lifestyle, region, and interest signals without any separate ad copy
+- **Scene-aware placement** — The video analysis selects timestamps where body positioning allows natural product visibility (wrist for a watch, hand for a phone)
+- **AI frame editing** — Gemini image models add the product physically onto the character in the extracted frame
+- **Voice cloning** — ElevenLabs Instant Voice Clone matches the character's voice from a reference file
+- **Seamless splicing** — ffmpeg replaces exactly the selected 3-second window with no visible cut artifacts
+- **Web UI** — A browser-based interface walks through all three steps without writing code
+
+## Tech stack
+
+| Component | Technology |
+|---|---|
+| API server | FastAPI + Uvicorn |
+| Product identification | Google Gemini (text) |
+| Video analysis | Google Gemini (video) |
+| Frame editing | Google Gemini (image) |
+| Voiceover | ElevenLabs TTS + Voice Clone |
+| Video processing | ffmpeg / ffprobe |
+| Runtime | Python 3.10+ |

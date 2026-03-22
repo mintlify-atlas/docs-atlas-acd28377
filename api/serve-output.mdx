@@ -1,0 +1,36 @@
+---
+title: 'Serve output video'
+description: 'Download a generated merged video file produced by the generate-ad-video endpoint.'
+---
+
+## GET /api/output/{filename}
+
+Serves a merged video file produced by [POST /api/generate-ad-video](/api/generate-ad-video). The `filename` comes from the `video_url` field in that response.
+
+<Note>
+  Output files are stored in a temporary directory on the server. They are lost when the server restarts and are not guaranteed to persist indefinitely. Download the file promptly after generation.
+</Note>
+
+### Path parameter
+
+<ParamField path="filename" type="string" required>
+  The filename portion of `video_url` from the generate-ad-video response, e.g. `"550e8400-e29b-41d4-a716-446655440000_edited.mp4"`.
+</ParamField>
+
+### Response
+
+Returns the video file as a binary stream with content type `video/mp4`.
+
+### Example
+
+Download the merged video to a local file:
+
+```bash
+curl -o merged.mp4 http://127.0.0.1:8000/api/output/550e8400-e29b-41d4-a716-446655440000_edited.mp4
+```
+
+### Errors
+
+| Status | Cause |
+|--------|-------|
+| `404`  | File not found — either cleaned up, the server restarted, or the filename is incorrect. |

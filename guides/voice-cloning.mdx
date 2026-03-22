@@ -1,0 +1,82 @@
+---
+title: "Voice cloning"
+description: "Configure ElevenLabs Instant Voice Clone to give your ad voiceover the character's voice, or fall back to a default voice or silent track."
+---
+
+Splyce uses the [ElevenLabs Instant Voice Clone API](https://api.elevenlabs.io/v1/voices/add) to generate voiceover in the character's voice. A reference audio or video file is uploaded to ElevenLabs, which returns a `voice_id` that is cached in-process for the lifetime of the server.
+
+## How voice cloning works
+
+When `/api/generate-ad-video` is called for the first time in a server process:
+
+1. Splyce reads the reference file from `VOICE_REFERENCE_PATH` (default: `wolf_voice.mp4` at the project root).
+2. It sends the file to `https://api.elevenlabs.io/v1/voices/add` as multipart form data.
+3. ElevenLabs returns a `voice_id` for the cloned voice.
+4. The `voice_id` is cached in memory. All subsequent voiceover requests in the same process reuse this ID without re-uploading the file.
+
+The voiceover line is: `"Oh wow, a {product_name}."` — generated at video generation time with the matched product name substituted in.
+
+<Warning>
+  Voice cloning via the Instant Voice Clone API requires a paid ElevenLabs subscription. Free-tier accounts do not support this feature. If you are on the free tier, use a fixed `ELEVENLABS_VOICE_ID` and omit the reference file, or set `ALLOW_SILENT_VOICEOVER=1`.
+</Warning>
+
+## Default reference file
+
+Place a file named `wolf_voice.mp4` at the project root:
+
+```
+splyce/
+├── wolf_voice.mp4   ← reference file
+├── app/
+├── run.py
+└── ...
+```
+
+Splyce picks this up automatically with no additional configuration.
+
+## Custom reference file
+
+To use a different file, set `VOICE_REFERENCE_PATH` to its absolute or relative path:
+
+```env
+VOICE_REFERENCE_PATH=/path/to/my_voice_reference.mp3
+```
+
+Any audio or video format that ElevenLabs accepts for voice cloning works — MP4, MP3, WAV, M4A, and others.
+
+<Tip>
+  For the best clone quality, use a reference file with at least 30 seconds of clear, continuous speech in a quiet environment. Avoid background music, overlapping voices, or heavy audio processing.
+</Tip>
+
+## Fallback behavior
+
+Splyce degrades gracefully if voice cloning is unavailable:
+
+| Condition | Behavior |
+|---|---|
+| Reference file exists, `ELEVENLABS_API_KEY` set | Clone voice from file, cache `voice_id` |
+| Clone fails (no file, API error, etc.) | Fall back to `ELEVENLABS_VOICE_ID` (default: `21m00Tcm4TlvDq8ikWAM`) |
+| `ALLOW_SILENT_VOICEOVER=1` and all voiceover fails | Insert a silent audio track instead of aborting |
+| No `ELEVENLABS_API_KEY` and `ALLOW_SILENT_VOICEOVER` not set | Request fails with an error |
+
+## Skipping voiceover entirely
+
+If you want to test video generation without an ElevenLabs key, set:
+
+```env
+ALLOW_SILENT_VOICEOVER=1
+```
+
+Splyce will skip all TTS and voice-clone calls and splice in a silent audio segment instead. The merged video will otherwise be identical — scenes, timing, and frame edits are unaffected.
+
+## API reference
+
+The ElevenLabs call Splyce makes:
+
+```python
+url = "https://api.elevenlabs.io/v1/voices/add"
+# Sends the reference file as multipart form data
+# Returns {"voice_id": "..."}
+```
+
+See the [ElevenLabs API docs](https://elevenlabs.io/docs) for full details on the Instant Voice Clone endpoint.

@@ -1,0 +1,61 @@
+---
+title: "Environment variables"
+description: "Complete reference for all Splyce environment variables, grouped by category."
+---
+
+Splyce is configured entirely through environment variables. Create a `.env` file at the project root and set the variables you need. The server reads this file on startup.
+
+## Required
+
+| Variable | Description |
+|---|---|
+| `GEMINI_API_KEY` | Google AI API key. Get one from [Google AI Studio](https://aistudio.google.com/apikey). |
+
+## AI models
+
+| Variable | Default | Description |
+|---|---|---|
+| `GEMINI_TEXT_MODEL` | `gemini-2.0-flash` | Gemini model used for product identification. |
+| `GEMINI_VIDEO_ANALYSIS_MODEL` | `gemini-2.0-flash` | Gemini model used for video scene analysis. |
+| `GEMINI_IMAGE_MODELS` | `gemini-3.1-flash-image-preview,gemini-2.5-flash-image` | Comma-separated list of Gemini image models tried in order when editing frames. Splyce falls back to the next model if one fails. |
+
+## Voiceover
+
+| Variable | Default | Description |
+|---|---|---|
+| `ELEVENLABS_API_KEY` | — | ElevenLabs API key. Required for TTS and voice cloning. Omit if using `ALLOW_SILENT_VOICEOVER=1`. |
+| `ELEVENLABS_VOICE_ID` | `21m00Tcm4TlvDq8ikWAM` | Default ElevenLabs voice ID used when voice cloning is unavailable or fails. |
+| `VOICE_REFERENCE_PATH` | `wolf_voice.mp4` (project root) | Path to the audio or video file used as the voice cloning reference. See [Voice cloning](/guides/voice-cloning). |
+| `ALLOW_SILENT_VOICEOVER` | — | Set to `1` to insert a silent audio track instead of generating voiceover. Useful for testing without an ElevenLabs key. |
+
+## Video processing
+
+| Variable | Default | Description |
+|---|---|---|
+| `MAX_VIDEO_UPLOAD_MB` | `200` | Maximum allowed video upload size in megabytes. |
+| `AD_SEGMENT_SECONDS` | `3` | Duration in seconds of the ad segment spliced into the clip. |
+| `AD_FRAME_OFFSET_RATIO` | `0.2` | Fraction into the ad window where the key frame is extracted. At the default of `0.2`, the frame is taken 0.6 s into a 3-second segment. |
+| `VIDEO_CACHE_MAX_AGE_S` | `1800` | How long (in seconds) an uploaded video is cached before being deleted. Defaults to 30 minutes. After expiry you must re-upload the clip. |
+
+## Server
+
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `8000` | Port the Uvicorn server listens on. |
+
+## Sample .env file
+
+```env
+# Required
+GEMINI_API_KEY=your_key_here
+
+# Optional: voiceover
+ELEVENLABS_API_KEY=your_key_here
+
+# Optional: model overrides
+# GEMINI_TEXT_MODEL=gemini-2.0-flash
+# GEMINI_VIDEO_ANALYSIS_MODEL=gemini-2.0-flash
+
+# Optional: allow video generation without voiceover
+# ALLOW_SILENT_VOICEOVER=1
+```

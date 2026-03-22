@@ -1,0 +1,122 @@
+---
+title: 'Analyze video'
+description: 'Upload a video clip and get a scene breakdown, ad placement recommendation, and a video_id to use in the generation step.'
+---
+
+## POST /api/analyze-video
+
+Accepts a video clip and a product name. Sends the clip to Gemini for scene analysis, then returns a full scene breakdown, an ad placement recommendation with timestamp and visual instructions, and a `video_id` to use in [POST /api/generate-ad-video](/api/generate-ad-video).
+
+<Warning>
+  The `video_id` returned by this endpoint expires after **30 minutes**. Calls to `/api/generate-ad-video` with an expired or unknown `video_id` will return `404`.
+</Warning>
+
+### Request
+
+Send the request as `multipart/form-data`.
+
+<ParamField body="video" type="file" required>
+  The video clip to analyze. Accepted formats: MP4, MOV, MPEG, WEBM, MKV, AVI. Maximum size is `MAX_VIDEO_UPLOAD_MB` (default 200 MB).
+</ParamField>
+
+<ParamField body="product_name" type="string" required>
+  The product to advertise. Typically the `product_name` returned by [POST /api/identify-product](/api/identify-product).
+</ParamField>
+
+### Response
+
+<ResponseField name="scene_breakdown" type="string" required>
+  Detailed scene-by-scene analysis with timestamps and transcript.
+</ResponseField>
+
+<ResponseField name="ad_placement" type="object" required>
+  Placement recommendation produced by Gemini.
+
+  <Expandable title="properties">
+    <ResponseField name="ad_timestamp" type="string">
+      Suggested insertion point in `MM:SS` format.
+    </ResponseField>
+
+    <ResponseField name="ad_timestamp_seconds" type="number">
+      Same timestamp as a decimal number of seconds.
+    </ResponseField>
+
+    <ResponseField name="placement_rationale" type="string">
+      Why this moment was chosen for the ad insertion.
+    </ResponseField>
+
+    <ResponseField name="scene_context" type="string">
+      Description of what is happening at the insertion point.
+    </ResponseField>
+
+    <ResponseField name="ad_description" type="object">
+      Visual and audio instructions for the ad segment.
+
+      <Expandable title="properties">
+        <ResponseField name="visual" type="string">
+          Exact description of how the product should appear on the character or in the frame.
+        </ResponseField>
+
+        <ResponseField name="text_or_voiceover" type="string">
+          Draft voiceover line for the ad segment.
+        </ResponseField>
+
+        <ResponseField name="transition_in" type="string">
+          Recommended transition into the ad segment.
+        </ResponseField>
+
+        <ResponseField name="transition_out" type="string">
+          Recommended transition out of the ad segment.
+        </ResponseField>
+
+        <ResponseField name="style_notes" type="string">
+          Color grade and lighting guidance to match the surrounding footage.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="edit_instruction" type="object">
+      Low-level instruction for the image editor.
+
+      <Expandable title="properties">
+        <ResponseField name="timestamp" type="string">
+          The target timestamp for the edit.
+        </ResponseField>
+
+        <ResponseField name="whats_happening" type="string">
+          Brief description of the scene at that moment.
+        </ResponseField>
+
+        <ResponseField name="adjustment" type="string">
+          Specific instruction for the image editor, e.g. how to composite the product into the frame.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="product" type="string" required>
+  The `product_name` value echoed back from the request.
+</ResponseField>
+
+<ResponseField name="video_id" type="string" required>
+  UUID identifying the cached video on the server. Pass this to `/api/generate-ad-video`. Valid for 30 minutes.
+</ResponseField>
+
+### Example
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/analyze-video \
+  -F "video=@/path/to/clip.mp4" \
+  -F "product_name=2025 Toyota RAV4 XLE Hybrid AWD"
+```
+
+### Errors
+
+| Status | Cause |
+|--------|-------|
+| `400`  | `product_name` is missing. |
+| `400`  | Uploaded file is empty. |
+| `413`  | File exceeds `MAX_VIDEO_UPLOAD_MB`. |
+| `503`  | `GEMINI_API_KEY` is not configured. |
+| `502`  | Gemini video analysis request failed. |

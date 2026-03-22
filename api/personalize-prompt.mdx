@@ -1,0 +1,77 @@
+---
+title: 'Personalize prompt'
+description: 'Generate a meta-prompt for a given brand and viewer profile. Returns the prompt text only — does not call Gemini.'
+---
+
+## POST /api/personalize-prompt
+
+Builds and returns the meta-prompt text for a brand and viewer profile. Use this endpoint to get the prompt for copy/paste into your own Gemini session or another LLM.
+
+<Note>
+  This endpoint does **not** call Gemini. To have Splyce call Gemini and return the identified product directly, use [POST /api/identify-product](/api/identify-product).
+</Note>
+
+### Request body
+
+<ParamField body="brand_name" type="string" required>
+  The brand to advertise. The LLM infers the best-fitting specific product from the viewer context.
+</ParamField>
+
+<ParamField body="user_data" type="object | string">
+  Viewer context. Accepts a JSON object or a freeform string describing the viewer (demographics, interests, region, etc.).
+</ParamField>
+
+<ParamField body="mode" type="string" default="full">
+  Prompt size. Must be `"full"` or `"minimal"`. `"full"` produces a detailed prompt; `"minimal"` produces a shorter one.
+</ParamField>
+
+<ParamField body="output_language" type="string">
+  Optional language for the output, e.g. `"English"` or `"Spanish"`.
+</ParamField>
+
+<ParamField body="brand_voice_notes" type="string">
+  Optional tone guidance, legal constraints, or words to avoid. Applied when selecting the specific product.
+</ParamField>
+
+### Response
+
+<ResponseField name="prompt" type="string" required>
+  The full meta-prompt text, ready to paste into an LLM session.
+</ResponseField>
+
+<ResponseField name="mode" type="string" required>
+  The mode that was used: `"full"` or `"minimal"`.
+</ResponseField>
+
+### Example
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/personalize-prompt \
+  -H "Content-Type: application/json" \
+  -d '{
+    "brand_name": "Toyota",
+    "user_data": {
+      "household_income": "$75k-$100k",
+      "interests": ["road trips", "outdoors"],
+      "region": "US-West",
+      "family_size": 2
+    },
+    "mode": "full"
+  }'
+```
+
+**Response**
+
+```json
+{
+  "prompt": "You are a retail product specialist for Toyota. Given the following viewer profile...\n",
+  "mode": "full"
+}
+```
+
+### Errors
+
+| Status | Cause |
+|--------|-------|
+| `400`  | `brand_name` is missing or empty. |
+| `400`  | `mode` is not `"full"` or `"minimal"`. |

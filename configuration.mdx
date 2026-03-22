@@ -1,0 +1,119 @@
+---
+title: "Configuration"
+description: "Environment variables for the Splyce server, including API keys, model overrides, and video processing settings."
+---
+
+All configuration is read from environment variables at startup. The recommended way to set them is with a `.env` file in the project root — the server loads it automatically via `python-dotenv`.
+
+## Required
+
+<ParamField path="GEMINI_API_KEY" type="string" required>
+  Your Google AI API key. Used for all Gemini calls: product identification, video analysis, and frame editing. Get one at [aistudio.google.com](https://aistudio.google.com/app/apikey).
+</ParamField>
+
+## AI models
+
+<ParamField path="GEMINI_TEXT_MODEL" type="string" default="gemini-2.0-flash">
+  Gemini model used for text tasks, including product identification via `/api/identify-product` and `/api/personalize-prompt`.
+</ParamField>
+
+<ParamField path="GEMINI_VIDEO_ANALYSIS_MODEL" type="string" default="gemini-2.0-flash">
+  Gemini model used for video scene analysis in `/api/analyze-video`. This model receives the uploaded video file and returns a scene breakdown with placement instructions.
+</ParamField>
+
+<ParamField path="GEMINI_IMAGE_MODELS" type="string" default="gemini-3.1-flash-image-preview,gemini-2.5-flash-image">
+  Comma-separated list of Gemini image models to try for frame editing, in priority order. The server attempts each model in turn and uses the first successful response.
+</ParamField>
+
+<ParamField path="GEMINI_VEO_MODEL" type="string" default="veo-3.1-generate-preview">
+  Veo model used for AI video generation. Only relevant if using the Veo-based generation path.
+</ParamField>
+
+<ParamField path="GEMINI_VEO_POLL_INTERVAL_S" type="number" default="10">
+  How often (in seconds) to poll the Veo API for a completed generation job.
+</ParamField>
+
+<ParamField path="GEMINI_VEO_MAX_WAIT_S" type="number" default="600">
+  Maximum time (in seconds) to wait for a Veo generation job before timing out.
+</ParamField>
+
+## Voice and audio
+
+<ParamField path="ELEVENLABS_API_KEY" type="string">
+  ElevenLabs API key for voiceover generation. If not set, you must set `ALLOW_SILENT_VOICEOVER=1` or voiceover steps will fail.
+</ParamField>
+
+<ParamField path="ELEVENLABS_VOICE_ID" type="string" default="21m00Tcm4TlvDq8ikWAM">
+  ElevenLabs voice ID to use when no voice clone reference is available. Defaults to the ElevenLabs "Rachel" voice.
+</ParamField>
+
+<ParamField path="VOICE_REFERENCE_PATH" type="string" default="wolf_voice.mp4">
+  Path to a video or audio file used as the source for ElevenLabs Instant Voice Cloning. If the file exists, the server clones the voice from it before generating the voiceover line. Relative paths are resolved from the project root.
+</ParamField>
+
+<ParamField path="ALLOW_SILENT_VOICEOVER" type="string">
+  Set to `1` to skip voiceover generation entirely and produce a silent ad segment. Useful for development or when no ElevenLabs key is available.
+</ParamField>
+
+## Video processing
+
+<ParamField path="MAX_VIDEO_UPLOAD_MB" type="number" default="200">
+  Maximum allowed size (in megabytes) for video files uploaded to `/api/analyze-video`. Requests exceeding this limit are rejected with a 413 response.
+</ParamField>
+
+<ParamField path="AD_SEGMENT_SECONDS" type="number" default="3">
+  Duration (in seconds) of the ad segment that replaces the selected window in the original video. The frame edit and voiceover are both fitted to this length.
+</ParamField>
+
+<ParamField path="AD_FRAME_OFFSET_RATIO" type="number" default="0.2">
+  Fractional position within the selected ad window at which the representative frame is extracted for image editing. `0.2` means 20% into the segment.
+</ParamField>
+
+<ParamField path="VIDEO_CACHE_MAX_AGE_S" type="number" default="1800">
+  How long (in seconds) processed video files are cached before being eligible for eviction. Defaults to 30 minutes.
+</ParamField>
+
+## Server
+
+<ParamField path="PORT" type="number" default="8000">
+  TCP port the Uvicorn server listens on. You can also override this by setting the variable before calling `python run.py`:
+
+  ```bash
+  PORT=9000 python run.py
+  ```
+</ParamField>
+
+## Sample .env file
+
+The following covers the most common configuration for a full setup with ElevenLabs voiceover enabled:
+
+```bash .env
+# Required
+GEMINI_API_KEY=your_google_ai_api_key_here
+
+# ElevenLabs voiceover (remove ALLOW_SILENT_VOICEOVER if you set these)
+ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
+ELEVENLABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM
+VOICE_REFERENCE_PATH=wolf_voice.mp4
+
+# Model overrides (defaults shown)
+# GEMINI_TEXT_MODEL=gemini-2.0-flash
+# GEMINI_VIDEO_ANALYSIS_MODEL=gemini-2.0-flash
+# GEMINI_IMAGE_MODELS=gemini-3.1-flash-image-preview,gemini-2.5-flash-image
+
+# Video processing
+# MAX_VIDEO_UPLOAD_MB=200
+# AD_SEGMENT_SECONDS=3
+# AD_FRAME_OFFSET_RATIO=0.2
+# VIDEO_CACHE_MAX_AGE_S=1800
+
+# Server
+# PORT=8000
+
+# Development: skip voiceover if no ElevenLabs key
+# ALLOW_SILENT_VOICEOVER=1
+```
+
+<Warning>
+  Never commit your `.env` file to version control. Add it to `.gitignore` to prevent accidentally exposing API keys.
+</Warning>

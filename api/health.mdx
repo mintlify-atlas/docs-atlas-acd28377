@@ -1,0 +1,121 @@
+---
+title: 'Health & status'
+description: 'Read-only endpoints for checking service health, version info, and AI provider configuration.'
+---
+
+Three endpoints let you verify that Splyce is running and that its external dependencies are configured correctly. None of these endpoints require authentication or a request body.
+
+---
+
+## GET /api/health
+
+Returns the overall service status and whether the AI providers are configured.
+
+```bash
+curl http://127.0.0.1:8000/api/health
+```
+
+**Response**
+
+```json
+{
+  "status": "ok",
+  "service": "splyce-ad-personalization",
+  "prompt_api": "product-prompt-v2-no-standard-ad",
+  "gemini_configured": true,
+  "elevenlabs_configured": true
+}
+```
+
+<ResponseField name="status" type="string">
+  Always `"ok"` when the server is reachable.
+</ResponseField>
+
+<ResponseField name="service" type="string">
+  Static service identifier string.
+</ResponseField>
+
+<ResponseField name="prompt_api" type="string">
+  Active prompt API version label.
+</ResponseField>
+
+<ResponseField name="gemini_configured" type="boolean">
+  `true` if `GEMINI_API_KEY` is set in the environment.
+</ResponseField>
+
+<ResponseField name="elevenlabs_configured" type="boolean">
+  `true` if `ELEVENLABS_API_KEY` is set in the environment.
+</ResponseField>
+
+---
+
+## GET /api/version
+
+Returns routing information and a summary of available endpoints.
+
+```bash
+curl http://127.0.0.1:8000/api/version
+```
+
+**Response**
+
+```json
+{
+  "prompt_api": "product-prompt-v2-no-standard-ad",
+  "standard_ad": "optional-ignored",
+  "identify_endpoints": "/api/identify-product or /api/ai/identify-product",
+  "video_placement": "/api/analyze-video (multipart: video + product_name)",
+  "video_generate": "/api/generate-ad-video (multipart: video_id + analysis JSON + product_name)"
+}
+```
+
+<ResponseField name="prompt_api" type="string">
+  Active prompt API version label.
+</ResponseField>
+
+<ResponseField name="standard_ad" type="string">
+  Indicates the legacy `standard_ad` field is accepted but ignored.
+</ResponseField>
+
+<ResponseField name="identify_endpoints" type="string">
+  Available paths for the product identification step.
+</ResponseField>
+
+<ResponseField name="video_placement" type="string">
+  Path and expected input for the video analysis step.
+</ResponseField>
+
+<ResponseField name="video_generate" type="string">
+  Path and expected input for the ad generation step.
+</ResponseField>
+
+---
+
+## GET /api/ai/status
+
+Returns only the AI provider configuration flags. Useful for a lightweight dependency check.
+
+```bash
+curl http://127.0.0.1:8000/api/ai/status
+```
+
+**Response**
+
+```json
+{
+  "gemini_configured": true,
+  "elevenlabs_configured": false
+}
+```
+
+<ResponseField name="gemini_configured" type="boolean">
+  `true` if `GEMINI_API_KEY` is set in the environment.
+</ResponseField>
+
+<ResponseField name="elevenlabs_configured" type="boolean">
+  `true` if `ELEVENLABS_API_KEY` is set in the environment.
+</ResponseField>
+
+<Note>
+  If `elevenlabs_configured` is `false`, generating ad videos will fail unless `ALLOW_SILENT_VOICEOVER=1` is set. See [generate ad video](/api/generate-ad-video) for details.
+</Note>
