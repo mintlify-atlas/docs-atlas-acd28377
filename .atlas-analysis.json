@@ -1,0 +1,77 @@
+{
+  "projectType": "api-service",
+  "projectName": "Splyce",
+  "projectDescription": "An AI-powered video ad personalization platform that identifies the best product SKU for a viewer, finds the optimal ad placement in a video clip, and seamlessly splices a generated ad segment using Gemini and ElevenLabs.",
+  "theme": "sequoia",
+  "primaryColor": "#7C3AED",
+  "lightColor": "#EDE9FE",
+  "darkColor": "#4C1D95",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart", "configuration"]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/pipeline-overview",
+              "concepts/product-identification",
+              "concepts/video-ad-placement",
+              "concepts/video-generation"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/running-the-server",
+              "guides/using-the-web-ui",
+              "guides/voice-cloning",
+              "guides/environment-variables"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api/health",
+              "api/personalize-prompt",
+              "api/identify-product",
+              "api/analyze-video",
+              "api/generate-ad-video",
+              "api/serve-output"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "AI-powered viewer-to-product matching using Google Gemini",
+    "Automated video scene breakdown and ad placement analysis",
+    "Gemini image editing to place products physically on characters in frames",
+    "ElevenLabs voice cloning for natural voiceover in character's voice",
+    "ffmpeg-based video splicing to seamlessly insert 3-second ad segments",
+    "Three-step pipeline: identify product → analyze video → generate merged video",
+    "Web UI for manual interaction with the full pipeline",
+    "Configurable via environment variables with sensible defaults"
+  ],
+  "publicApiSurface": [
+    "POST /api/personalize-prompt",
+    "POST /api/identify-product",
+    "POST /api/ai/identify-product",
+    "POST /api/analyze-video",
+    "POST /api/generate-ad-video",
+    "GET /api/output/{filename}",
+    "GET /api/health",
+    "GET /api/version",
+    "GET /api/ai/status"
+  ]
+}
